@@ -297,4 +297,255 @@ function getPrecio($idProducto){
     return $precio;
 }
 
+function obtenerIDs(){
+
+    # Función 'obtenerClientes'. 
+    # Parámetros: 
+    # 	- none
+    # Funcionalidad:
+    # Obtener todas las id de los clientes
+    #
+    # Retorna: Todas los clientes
+    #
+    # Código por Edu Gutierrez
+    
+    global $conexion;
+    try {
+        $consulta = $conexion->prepare("SELECT customerNumber FROM customers ORDER BY customerNumber ASC");
+        $consulta->execute();
+        $datos = $consulta -> fetchAll(PDO::FETCH_ASSOC);
+        return !empty($datos)? $datos: null;
+    } catch (PDOException $ex) {
+        echo "<p>Ha ocurrido un error al devolver los datos de los clientes: <span style='color: red; font-weight: bold;'>". $ex->getMessage()."</span></p></br>";
+        return null;
+    }
+
+}
+
+function obtenerInfoPedidos($id){
+
+    # Función 'obtenerInfoPedidos'. 
+    # Parámetros: 
+    # 	- $id (customerNumber)
+    # Funcionalidad:
+    # Obtener los información de pedidos de ese cliente.
+    #
+    # Retorna: Los datos de pedidos realizados del Cliente / 
+    #(customerNumber), (orderNumber), (orderDate), (status), (orderLineNumber), (productName), (quantityOrdered) y (priceEach). 
+    # Código por Edu Gutierrez
+    
+    global $conexion;
+    try {
+        $consulta = $conexion->prepare("SELECT customerNumber, orders.orderNumber, orderDate, status, orderLineNumber, productName, quantityOrdered, priceEach FROM orders LEFT JOIN orderdetails ON 
+        orders.orderNumber=orderdetails.orderNumber LEFT JOIN products ON products.productCode=orderdetails.productCode  WHERE customerNumber=:id ORDER BY orderLineNumber ASC");
+        $consulta->bindParam(":id",$id);
+        $consulta->execute();
+        $datos = $consulta -> fetchAll(PDO::FETCH_ASSOC);
+        return !empty($datos)? $datos: null;
+    } catch (PDOException $ex) {
+        echo "<p>Ha ocurrido un error al devolver los datos del cliente que se busca por este id: <span style='color: red; font-weight: bold;'>". $ex->getMessage()."</span></p></br>";
+        return null;
+    }
+
+}
+
+function imprimirInfoPedidos($infos){
+
+
+    # Función 'imprimirInfoPedidos'. 
+    # Parámetros: 
+    # 	- $infos (Información de pedidos)
+    # Funcionalidad:
+    # Imprimir en una tabla la información de los pedidos
+    #
+    # Retorna: none
+    #
+    # Código por Edu Gutierrez
+    
+    echo "<br>En total hay ".count($infos)." pedidos para el cliente ".$infos[0]["customerNumber"].":<br><br>";
+
+    echo 	"<table border='1'>
+    <tr>
+        <th>Número de Línea</th>
+        <th>Número Pedido</th>
+        <th>Fecha Pedido</th>
+        <th>Estado Pedido</th>
+        <th>Nombre Producto</th>
+        <th>Cantidad Pedida</th>
+        <th>Precio Unidad</th>
+    </tr>";
+
+foreach ($infos as $info) {
+echo "<tr>
+        <td>". $info["orderLineNumber"] ."</td>
+        <td>". $info["orderNumber"] ."</td>
+        <td>". $info["orderDate"] ."</td>
+        <td>". $info["status"] ."</td>
+        <td>". $info["productName"] ."</td>
+        <td>". $info["quantityOrdered"] ."</td>
+        <td>". $info["priceEach"] .' €'."</td>
+     </tr>";
+}
+echo 	"</table>";
+}
+
+function obtenerLineasProductos(){
+
+    # Función 'obtenerLineasProductos'. 
+    # Parámetros: 
+    # 	- none
+    # Funcionalidad:
+    # Obtener todas las líneas de producto
+    #
+    # Retorna: Todas las líneas de producto
+    #
+    # Código por Edu Gutierrez
+    
+    global $conexion;
+    try {
+        $consulta = $conexion->prepare("SELECT productLine FROM productLines ORDER BY productLine ASC");
+        $consulta->execute();
+        $datos = $consulta -> fetchAll(PDO::FETCH_ASSOC);
+        return !empty($datos)? $datos: null;
+    } catch (PDOException $ex) {
+        echo "<p>Ha ocurrido un error al devolver los datos de las líneas de producto: <span style='color: red; font-weight: bold;'>". $ex->getMessage()."</span></p></br>";
+        return null;
+    }
+}
+
+function verStockLineaProducto($linea_prod){
+
+    # Función 'verStockLineaProducto'. 
+    # Parámetros: 
+    # 	- $linea_prod (productLine)
+    # Funcionalidad:
+    # Obtener el stock de una determinada línea de producto.
+    #
+    # Retorna: Stock total 
+    # Código por Edu Gutierrez
+    
+    global $conexion;
+    try {
+        $consulta = $conexion->prepare("SELECT productLine ,productName, quantityInStock FROM products WHERE productLine=:linea_prod");
+        $consulta->bindParam(":linea_prod",$linea_prod);
+        $consulta->execute();
+        $datos = $consulta -> fetchAll(PDO::FETCH_ASSOC);
+        return !empty($datos)? $datos: null;
+    } catch (PDOException $ex) {
+        echo "<p>Ha ocurrido un error al devolver los datos del cliente que se busca por esta línea  de producto: <span style='color: red; font-weight: bold;'>". $ex->getMessage()."</span></p></br>";
+        return null;
+    }
+
+}
+
+
+function imprimirStockLineaProducto($infos){
+
+     # Función 'imprimirStockLineaProducto'. 
+    # Parámetros: 
+    # 	- $infos (Información de pedidos)
+    # Funcionalidad:
+    # Imprimir en una tabla las cantidades de productos.
+    #
+    # Retorna: none
+    #
+    # Código por Edu Gutierrez
+    
+    $stockTotal=0;
+
+    echo 	"<p>Stock Línea de Producto: ". $infos[0]["productLine"] ."<p><table border='1'>
+    <tr>
+        <th>Nombre de producto</th>
+        <th>Cantidad en Stock</th>
+    </tr>";
+
+foreach ($infos as $info) {
+echo "<tr>
+        <td>". $info["productName"] ."</td>
+        <td>". $info["quantityInStock"] ."</td>
+     </tr>";
+     $stockTotal+=$info["quantityInStock"];
+}
+echo 	"</table><p>El Stock total es ".$stockTotal." unidades.</p>";
+}
+
+
+function consultarPagos($id, $fecha_inicio, $fecha_fin){
+    # Función 'consultarPagos'. 
+    # Parámetros: 
+    # 	- $id (customerNuber)
+    #	- $fecha_inicio (fecha de inicio, desde la cual se empieza a buscar en el historial)
+    #	- $fecha_fin (fecha de fin, desde la cual se termina de buscar en el historial)
+    #
+    # Funcionalidad:
+    # Obtiene las pagos relizadas por un cliente entre dos fechas.
+    #
+    # Retorna: Los fechas y cantidades de esos pagos sino retorna null
+    #
+    # Código por Edu Gutierrez
+
+    
+        global $conexion;
+
+        if($fecha_inicio==null) $fecha_inicio="2000-01-01"; 
+        if ($fecha_fin==null) $fecha_fin=date("Y-m-d");
+
+        if ($fecha_inicio>$fecha_fin) {
+
+            $aux=$fecha_inicio;
+            $fecha_inicio=$fecha_fin;
+            $fecha_fin=$aux;
+
+        }  
+        try {
+
+            $consulta = $conexion->prepare("SELECT paymentDate,amount FROM payments WHERE customerNumber = :id and (paymentDate >= :fechaInicio and paymentDate <= :fechaFin) ORDER BY paymentDate DESC");
+            $consulta->bindParam(":fechaInicio", $fecha_inicio);
+            $consulta->bindParam(":fechaFin", $fecha_fin);
+            $consulta->bindParam(":id",$id);
+            $consulta->execute();
+    
+            $datos=$consulta->fetchAll(PDO::FETCH_ASSOC);
+            $fechas=array("fechainicio"=>$fecha_inicio,"fechafin"=>$fecha_fin);
+
+            $respuesta=array("datos"=>$datos, "fechas"=>$fechas);
+            return !empty($respuesta["datos"])? $respuesta: null;
+
+        } catch(PDOException $ex) {
+
+            echo "<p>Ha ocurrido un error al devolver los pagos que ha realizado este cliente: <span style='color: red; font-weight: bold;'>". $ex->getMessage()."</span></p></br>";
+            return null;
+        } 
+    }
+
+    function imprimirPagos($infos, $id){
+
+   # Función 'imprimirPagos'. 
+    # Parámetros: 
+    # 	- $infos (Información de los pagos)
+    # Funcionalidad:
+    # Imprimir en una tabla las fechas y cantidades de los pagos de un cliente..
+    #
+    # Retorna: none
+    #
+    # Código por Edu Gutierrez
+    
+ 
+
+    echo 	"<p>Pagos entre: ". $infos["fechas"]["fechainicio"]  ." // "
+    . $infos["fechas"]["fechafin"]. " del cliente Nº ". $id ." <p><table border='1'>
+    <tr>
+        <th>Fecha de Pago</th>
+        <th>Cantidad</th>
+    </tr>";
+
+foreach ($infos["datos"] as $info) {
+echo "<tr>
+        <td>". $info["paymentDate"] ."</td>
+        <td>". $info["amount"] ." €</td>
+     </tr>";
+     
+   }
+}
+
 ?>
